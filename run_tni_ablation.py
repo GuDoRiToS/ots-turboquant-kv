@@ -63,18 +63,18 @@ def generate_tni_kv_cache(n_tokens: int = 128, d: int = 256, group_size: int = 3
     
     raw_K = rng.standard_normal((n_tokens, d))
     outlier_channels = rng.choice(d, size=max(1, d // 25), replace=False)
-    raw_K[:, outlier_channels] *= 12.0  # Channel-wise outlier trap
+    raw_K[:, outlier_channels] *= 12.0  
     
     unit_K = raw_K / (np.linalg.norm(raw_K, axis=-1, keepdims=True) + 1e-12)
     
     norms = np.zeros((n_tokens, 1), dtype=np.float32)
     for i in range(n_tokens):
         r = rng.random()
-        if i < 4 or r < 0.05:  # Attention Sinks
+        if i < 4 or r < 0.05:  
             norms[i, 0] = rng.uniform(0.03, 0.07)
-        elif r < 0.90:         # Ordinary tokens
+        elif r < 0.90:         
             norms[i, 0] = max(1.0, rng.normal(8.3, 1.2))
-        else:                  # High-norm multimodal / outlier tokens
+        else:                 
             norms[i, 0] = rng.uniform(22.0, 35.0)
             
     K = unit_K * norms
@@ -204,19 +204,15 @@ def run_method(
     return K_hat, IP_est, elapsed_ms
 
 def evaluate_metrics(K: np.ndarray, Q: np.ndarray, K_hat: np.ndarray, IP_est: np.ndarray):
-    # 1. Per-Token Relative MSE (equally weights Attention Sinks, Ordinary, and Outlier tokens)
     rel_mse = np.mean(np.sum((K - K_hat) ** 2, axis=-1) / (np.sum(K ** 2, axis=-1) + 1e-12))
     
-    # 2. Per-Token Cosine Similarity
     cos_sim = np.mean(
         np.sum(K * K_hat, axis=-1) / (np.linalg.norm(K, axis=-1) * np.linalg.norm(K_hat, axis=-1) + 1e-12)
     )
     
-    # 3. Inner Product Pearson Correlation
     true_ip = Q @ K.T
     ip_corr = np.corrcoef(true_ip.ravel(), IP_est.ravel())[0, 1]
     
-    # 4. Attention Softmax KL-Divergence D_KL(P_true || P_est)
     scale = 1.0 / np.sqrt(K.shape[-1])
     logits_true = true_ip * scale
     logits_est = IP_est * scale
