@@ -3,7 +3,6 @@ import torch
 from scipy import stats
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Import your functions directly from Step 1
 from run_tni_ablation import (
     compute_lloyd_max_beta,
     evaluate_metrics,
@@ -11,7 +10,6 @@ from run_tni_ablation import (
     run_method,
 )
 
-# 15 long-context technical passages to generate real LLM KV cache states
 PASSAGES = [
     "Large language models require substantial high-bandwidth memory during long-context autoregressive generation because the key-value cache grows linearly with sequence length. Compressing these tensors to 2-bit representations enables edge deployment.",
     "In transformer attention layers, attention sink tokens at the beginning of a sequence exhibit very small L2 norms near 0.05 while still receiving massive softmax attention weights, creating severe token norm imbalance across groups.",
@@ -37,7 +35,6 @@ def extract_real_kv_samples(model_name: str = "Qwen/Qwen2.5-0.5B", seq_len: int 
     model.eval()
 
     samples = []
-    # Hook to capture real Query (Q) and Key (K) states from the middle transformer layer
     target_layer = model.model.layers[len(model.model.layers) // 2].self_attn
     captured = {}
 
@@ -55,20 +52,17 @@ def extract_real_kv_samples(model_name: str = "Qwen/Qwen2.5-0.5B", seq_len: int 
 
     with torch.no_grad():
         for text in PASSAGES:
-            # Repeat text slightly to guarantee >= seq_len tokens
             inputs = tokenizer(text * 2, return_tensors="pt", truncation=True, max_length=seq_len)
             if inputs["input_ids"].shape[1] < seq_len:
                 continue
             model(**inputs)
 
-            # Reshape K to (num_kv_heads * seq_len, head_dim) so we have a batch of real KV vectors
             K_raw = captured["K"][0, :seq_len, :].reshape(seq_len, num_kv_heads, head_dim)
             K_mat = np.transpose(K_raw, (1, 0, 2)).reshape(-1, head_dim).astype(np.float32)
 
             K_mat = np.transpose(K_raw, (1, 0, 2)).reshape(-1, head_dim).astype(np.float32)
-            K_mat = K_mat - np.mean(K_mat, axis=0, keepdims=True)  # <-- ADD THIS 1 LINE (Channel-Mean Centering)
+            K_mat = K_mat - np.mean(K_mat, axis=0, keepdims=True) 
 
-            # Take matching Query vectors (32, head_dim)
             Q_raw = captured["Q"][0, :seq_len, :head_dim].reshape(seq_len, head_dim).astype(np.float32)
             samples.append((K_mat, Q_raw))
 
@@ -81,7 +75,6 @@ if __name__ == "__main__":
     n_samples = len(samples)
     n_tokens = samples[0][0].shape[0]
 
-    # Measure real Token Norm Imbalance in Qwen2.5-0.5B
     all_norms = np.concatenate([np.linalg.norm(K, axis=-1) for K, _ in samples])
     print(f"Extracted {n_samples} real KV cache batches (N={n_tokens} vectors/batch, head_dim d={d})")
     print(f"Real LLM Token L2 Norms -> Min: {all_norms.min():.3f}, Median: {np.median(all_norms):.3f}, Max: {all_norms.max():.3f}")
