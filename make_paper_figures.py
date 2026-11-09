@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Clean academic publication styling with automatic layout spacing
 plt.rcParams.update({
     "font.family": "sans-serif",
     "font.size": 10,
@@ -21,7 +20,6 @@ def generate_figure_1():
     """
     fig, axes = plt.subplots(1, 3, figsize=(17.0, 5.0), constrained_layout=True)
 
-    # Panel (a): Operational Token Norm Imbalance Distribution
     rng = np.random.default_rng(42)
     sinks = rng.uniform(0.03, 0.07, size=8)
     ordinary = rng.normal(8.3, 1.2, size=104)
@@ -37,11 +35,10 @@ def generate_figure_1():
     axes[0].set_title("(a) Operational Token Norm Imbalance", pad=12)
     axes[0].set_xlabel("Token Position in KV Cache Group")
     axes[0].set_ylabel("Pre-Quantization Token L2 Norm")
-    axes[0].set_ylim(0, 46)  # Extra headroom so the legend never touches the 35.0 outlier bars
+    axes[0].set_ylim(0, 46)  
     axes[0].legend(loc="upper left", frameon=True, fontsize=8.5)
     axes[0].grid(axis="y", linestyle="--", alpha=0.4)
 
-    # Panel (b): 2-Bit & 3-Bit Attention Softmax KL-Divergence (Lower is Better)
     methods = [
         "KIVI\n(Group)",
         "TQ-MSE\n(Group)",
@@ -70,7 +67,6 @@ def generate_figure_1():
     axes[1].legend(loc="upper left", frameon=True, fontsize=8.5)
     axes[1].grid(axis="y", linestyle="--", alpha=0.4)
 
-    # Positioned cleanly over columns 4 and 5 where bars are short (< 0.09)
     axes[1].annotate(
         "-43.7% KL Error\n(p = 3.73e-9)",
         xy=(5 - width / 2, 0.088),
@@ -82,7 +78,6 @@ def generate_figure_1():
         ha="center",
     )
 
-    # Panel (c): 2-Bit Cosine Similarity vs. Execution Latency
     lat_2bit = [3.91, 12.29, 32.56, 14.45, 27.31, 23.17]
     cos_2bit = [0.7732, 0.8173, 0.5868, 0.7413, 0.9194, 0.9264]
     short_names = [
@@ -95,14 +90,13 @@ def generate_figure_1():
     ]
     point_colors = ["#5F6368", "#5F6368", "#D93025", "#FA903E", "#4285F4", "#137333"]
 
-    # Custom point offsets (dx, dy in points) so neighboring labels never collide
     offsets_pts = [
-        (8, -3),     # 0: KIVI -> right
-        (8, 5),      # 1: TQ-MSE -> upper right
-        (-8, 12),    # 2: Vanilla TQ-Prod -> upper left
-        (8, -10),    # 3: OTS-NoRot -> lower right
-        (0, -24),    # 4: OTS-TQ-Dense -> cleanly below point
-        (-10, 14),   # 5: OTS-TQ-Fast -> cleanly above point
+        (8, -3),     
+        (8, 5),      
+        (-8, 12),    
+        (8, -10),   
+        (0, -24),   
+        (-10, 14),   
     ]
     aligns = ["left", "left", "right", "left", "center", "center"]
 
@@ -140,7 +134,6 @@ def generate_figure_2():
     """
     fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.6), constrained_layout=True)
 
-    # Panel (a): Qwen2.5-0.5B Per-Token Relative MSE
     categories = [
         "Raw 2-Bit\n(Uncentered)",
         "Centered 2-Bit\n(p = 0.0151*)",
@@ -189,7 +182,6 @@ def generate_figure_2():
     axes[0].legend(loc="upper right", frameon=True, fontsize=8.5)
     axes[0].grid(axis="y", linestyle="--", alpha=0.4)
 
-    # Panel (b): Impact of Pre-RoPE Channel-Mean Centering on 2-Bit Attention KL-Divergence
     rot_methods = ["Vanilla TQ-Prod\n(2-Bit)", "OTS-TQ-Dense\n(2-Bit)", "OTS-TQ-Fast [Ours]\n(2-Bit)"]
     kl_raw = [3.57860, 3.05232, 3.33911]
     kl_centered = [2.84057, 2.47259, 2.51021]
@@ -228,7 +220,7 @@ def generate_figure_2():
     axes[1].set_xticks(x2)
     axes[1].set_xticklabels(rot_methods, fontsize=9)
     axes[1].set_ylabel("Attention Softmax KL-Divergence (Lower = Better)")
-    axes[1].set_ylim(0, 4.55)  # Raised y-ceiling so the legend never touches the 3.34 label
+    axes[1].set_ylim(0, 4.55)  
     axes[1].legend(loc="upper right", frameon=True, fontsize=8.5)
     axes[1].grid(axis="y", linestyle="--", alpha=0.4)
 
